@@ -1,0 +1,125 @@
+        <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Site Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    
+    <style>
+        /* Un peu de style personnalisé */
+        body { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+        .hidden { display: none; } /* Classe utilitaire pour cacher des éléments */
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+        input { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-section">
+        <h1>Bienvenue 👋</h1>
+        <p>Connectez-vous pour voir le contenu secret.</p>
+
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 10px;">
+            <input type="email" id="email" placeholder="Votre Email">
+            <input type="password" id="password" placeholder="Votre Mot de passe">
+            
+            <button onclick="signIn()">Se connecter</button>
+            <button onclick="signUp()">Créer un compte</button>
+            <br><br>
+            <small style="cursor:pointer; text-decoration:underline;" onclick="resetPassword()">Mot de passe oublié ?</small>
+        </div>
+        <p id="auth-message" class="error"></p>
+    </div>
+
+    <div id="app-section" class="hidden">
+        <h1>🚀 Hello World++</h1>
+        <p>Félicitations <span id="user-email" style="font-weight:bold;"></span> !</p>
+        <p>Si vous voyez ceci, c'est que vous êtes authentifié via Supabase.</p>
+        
+        <hr>
+        <h3>Contenu Secret</h3>
+        <p>Voici une image de chat aléatoire exclusive :</p>
+        <img src="https://cataas.com/cat" alt="Chat" style="border-radius:10px; max-height:200px;">
+        <hr>
+
+        <button onclick="signOut()" style="background-color: #d63031;">Se déconnecter</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION SUPABASE ---
+        // REMPLACEZ CES DEUX LIGNES PAR VOS CLES SUPABASE :
+        const supabaseUrl = 'https://jauuummmcwxxithoxerr.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXV1bW1tY3d4eGl0aG94ZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2MDY3MjcsImV4cCI6MjA4MDE4MjcyN30.UEmYZVqAeyM7w4Qlw8zRfYG5O-KsW-ioEr7g93guIrk'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+        // --- GESTION DE L'ETAT (Le Videur) ---
+        // Cette fonction s'exécute à chaque changement d'état (connexion/déconnexion)
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                // L'utilisateur est connecté
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                document.getElementById('user-email').innerText = session.user.email;
+            } else {
+                // L'utilisateur n'est pas connecté
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+            }
+        });
+
+        // --- FONCTIONS D'ACTION ---
+
+        // 1. Inscription
+        async function signUp() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            setMessage("Inscription en cours...", "black");
+
+            const { data, error } = await supabase.auth.signUp({ email, password });
+
+            if (error) setMessage("Erreur : " + error.message, "red");
+            else setMessage("Compte créé ! Vous êtes connecté.", "green");
+        }
+
+        // 2. Connexion
+        async function signIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            setMessage("Connexion...", "black");
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) setMessage("Erreur : " + error.message, "red");
+            // Si réussite, onAuthStateChange gérera l'affichage
+        }
+
+        // 3. Déconnexion
+        async function signOut() {
+            const { error } = await supabase.auth.signOut();
+        }
+
+        // 4. Mot de passe oublié (Envoi d'email)
+        async function resetPassword() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                setMessage("Veuillez entrer votre email d'abord.", "red");
+                return;
+            }
+            const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+            if (error) setMessage(error.message, "red");
+            else setMessage("Lien de réinitialisation envoyé par email !", "green");
+        }
+
+        // Petit utilitaire pour afficher les messages
+        function setMessage(msg, color) {
+            const el = document.getElementById('auth-message');
+            el.innerText = msg;
+            el.style.color = color;
+        }
+    </script>
+</body>
+</html>
